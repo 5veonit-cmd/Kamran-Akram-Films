@@ -15,10 +15,24 @@
         .brand h1 { font-size: 2.2rem; font-weight: 400; letter-spacing: 2px; color: #2c2b28; }
         .brand h1 i { color: #b78c5a; margin-right: 8px; }
         .brand .sub { font-size: 1rem; background: #eae5db; padding: 0.4rem 1.2rem; border-radius: 40px; color: #3d3a34; display: flex; align-items: center; gap: 10px; }
+        .admin-link { color: #b78c5a; text-decoration: none; font-size: 0.9rem; }
+
+        /* Login Overlay */
+        .login-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .login-overlay.active { display: flex; }
+        .login-box { background: white; padding: 2.5rem; border-radius: 24px; max-width: 400px; width: 90%; }
+        .login-box h2 { margin-bottom: 1.5rem; color: #2c2b28; }
+        .login-box input { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid #d4c9b8; border-radius: 8px; font-size: 1rem; }
+        .login-box .btn { width: 100%; padding: 0.8rem; }
+        .login-error { color: #e74c3c; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
 
         /* Admin Panel */
-        .admin-panel { background: white; padding: 2rem; border-radius: 24px; margin-bottom: 2rem; border: 1px solid #e3ddd2; }
+        .admin-panel { background: white; padding: 2rem; border-radius: 24px; margin-bottom: 2rem; border: 1px solid #e3ddd2; display: none; }
+        .admin-panel.visible { display: block; }
         .admin-panel h2 { margin-bottom: 1rem; color: #2c2b28; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .admin-header .btn-logout { background: #e74c3c; color: white; border: none; padding: 0.4rem 1.2rem; border-radius: 40px; cursor: pointer; font-size: 0.85rem; }
+
         .form-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
         .form-row input, .form-row select, .form-row textarea { padding: 0.6rem; border: 1px solid #d4c9b8; border-radius: 8px; font-size: 0.9rem; }
         .form-row textarea { resize: vertical; min-height: 60px; }
@@ -30,6 +44,8 @@
         .btn:hover { background: #b78c5a; }
         .btn-danger { background: #c0392b; }
         .btn-danger:hover { background: #e74c3c; }
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #2ecc71; }
 
         /* Filters */
         .filter-bar { display: flex; flex-wrap: wrap; gap: 0.8rem 1.2rem; background: white; padding: 1rem 1.5rem; border-radius: 60px; margin-bottom: 2.5rem; align-items: center; border: 1px solid #e3ddd2; }
@@ -39,7 +55,7 @@
         /* Product Grid */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
 
-        .card { background: white; border-radius: 24px; padding: 1.2rem; border: 1px solid #ede8df; }
+        .card { background: white; border-radius: 24px; padding: 1.2rem; border: 1px solid #ede8df; position: relative; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 14px 28px rgba(0,0,0,0.04); }
         .card .main-image { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; background: #f0ede7; }
         .card .category-tag { font-size: 0.7rem; text-transform: uppercase; background: #eae3d7; padding: 0.2rem 0.8rem; border-radius: 40px; display: inline-block; margin-bottom: 0.8rem; }
@@ -71,12 +87,32 @@
     <!-- Header -->
     <div class="brand">
         <h1><i class="fas fa-camera-retro"></i> Kamran Akram Films</h1>
-        <div class="sub"><i class="fas fa-map-pin"></i> Pakistan · PKR</div>
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <div class="sub"><i class="fas fa-map-pin"></i> Pakistan · PKR</div>
+            <a href="#" onclick="showLogin()" class="admin-link" id="loginLink"><i class="fas fa-lock"></i> Admin</a>
+            <a href="#" onclick="logout()" class="admin-link" id="logoutLink" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
     </div>
 
-    <!-- Admin Panel -->
+    <!-- Login Overlay -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2><i class="fas fa-lock"></i> Admin Login</h2>
+            <form id="loginForm">
+                <input type="password" id="adminPassword" placeholder="Enter Admin Password" required>
+                <button type="submit" class="btn btn-success"><i class="fas fa-sign-in-alt"></i> Login</button>
+                <div class="login-error" id="loginError">❌ Incorrect password. Please try again.</div>
+            </form>
+            <button onclick="closeLogin()" style="margin-top:1rem; background:transparent; border:none; color:#7d7566; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Admin Panel (hidden by default) -->
     <div class="admin-panel" id="adminPanel">
-        <h2><i class="fas fa-plus-circle"></i> Add / Edit Equipment</h2>
+        <div class="admin-header">
+            <h2><i class="fas fa-plus-circle"></i> Add / Edit Equipment</h2>
+            <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
         <form id="productForm">
             <input type="hidden" id="editId" value="">
             <div class="form-row">
@@ -146,19 +182,75 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
-//  CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE SHEET CSV URL
+//  CONFIGURATION 
 // ═══════════════════════════════════════════════════════════════════
+
+// 🔑 CHANGE THIS PASSWORD TO SOMETHING SECURE!
+const ADMIN_PASSWORD = 'admin123';  // ← CHANGE THIS!
+
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS4v_gd5yTNfBTt9kAX8uCwZZ_c9I-jSuxJNNoOYDfn2a6kgGZlXVRJpTf8MeFVoHYUBxiIgpBF6cHR/pub?output=csv&gid=0';
 
 // ═══════════════════════════════════════════════════════════════════
-//  APPLICATION CODE - DON'T CHANGE UNLESS YOU KNOW WHAT YOU'RE DOING
+//  APPLICATION CODE
 // ═══════════════════════════════════════════════════════════════════
 
 const grid = document.getElementById('productGrid');
 let allProducts = [];
 let currentCategory = 'all';
 let selectedFiles = [];
-let editingId = null;
+let isAdmin = false;
+
+// ─── AUTHENTICATION ────────────────────────────────────────────────
+
+function checkAuth() {
+    const saved = sessionStorage.getItem('adminAuth');
+    if (saved === 'true') {
+        isAdmin = true;
+        showAdminPanel();
+    }
+}
+
+function showLogin() {
+    if (isAdmin) return;
+    document.getElementById('loginOverlay').classList.add('active');
+    document.getElementById('adminPassword').value = '';
+    document.getElementById('loginError').style.display = 'none';
+}
+
+function closeLogin() {
+    document.getElementById('loginOverlay').classList.remove('active');
+}
+
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const password = document.getElementById('adminPassword').value;
+    if (password === ADMIN_PASSWORD) {
+        isAdmin = true;
+        sessionStorage.setItem('adminAuth', 'true');
+        closeLogin();
+        showAdminPanel();
+        document.getElementById('loginLink').style.display = 'none';
+        document.getElementById('logoutLink').style.display = 'inline';
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+});
+
+function logout() {
+    isAdmin = false;
+    sessionStorage.removeItem('adminAuth');
+    document.getElementById('adminPanel').classList.remove('visible');
+    document.getElementById('loginLink').style.display = 'inline';
+    document.getElementById('logoutLink').style.display = 'none';
+    renderProducts(allProducts, currentCategory);
+}
+
+function showAdminPanel() {
+    document.getElementById('adminPanel').classList.add('visible');
+    document.getElementById('loginLink').style.display = 'none';
+    document.getElementById('logoutLink').style.display = 'inline';
+    renderProducts(allProducts, currentCategory);
+}
 
 // ─── HELPERS ────────────────────────────────────────────────────────
 
@@ -197,10 +289,8 @@ function compressImage(file, maxSizeMB = 0.5) {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                // Quality based on target size
                 let quality = 0.7;
                 let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                // Reduce quality until under maxSizeMB
                 while (dataUrl.length / 1024 / 1024 > maxSizeMB && quality > 0.1) {
                     quality -= 0.05;
                     dataUrl = canvas.toDataURL('image/jpeg', quality);
@@ -215,7 +305,7 @@ function compressImage(file, maxSizeMB = 0.5) {
 
 // ─── RENDER PRODUCTS ──────────────────────────────────────────────
 
-function createCard(product) {
+function createCard(product, showAdmin = false) {
     const card = document.createElement('div');
     card.className = 'card';
     
@@ -226,6 +316,16 @@ function createCard(product) {
         `<div class="main-image" style="display:flex;align-items:center;justify-content:center;color:#8a7f6e;"><i class="fas fa-camera" style="font-size:2rem;"></i></div>`;
 
     const statusClass = product.status === 'Active' ? 'status-badge' : 'status-badge inactive';
+    
+    let adminActions = '';
+    if (showAdmin) {
+        adminActions = `
+            <div class="admin-actions">
+                <button class="btn" style="background:#3498db;padding:0.2rem 0.8rem;" onclick="editItem('${product.id}')"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn btn-danger" style="padding:0.2rem 0.8rem;" onclick="deleteItem('${product.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+    }
     
     card.innerHTML = `
         ${imageHTML}
@@ -242,21 +342,19 @@ function createCard(product) {
             <span><i class="fas fa-box"></i> used</span>
             <span><i class="fas fa-tag"></i> ${product.category || 'gear'}</span>
         </div>
-        <div class="admin-actions">
-            <button class="btn" style="background:#3498db;padding:0.2rem 0.8rem;" onclick="editItem('${product.id}')"><i class="fas fa-edit"></i> Edit</button>
-            <button class="btn btn-danger" style="padding:0.2rem 0.8rem;" onclick="deleteItem('${product.id}')"><i class="fas fa-trash"></i></button>
-        </div>
+        ${adminActions}
     `;
     return card;
 }
 
 function renderProducts(products, category) {
     grid.innerHTML = '';
+    
+    // Filter: Only show Active items for public, show all for admin
     const filtered = products.filter(p => {
         const categoryMatch = category === 'all' || (p.category || '').toLowerCase() === category.toLowerCase();
-        // Only show Active items to public (but we show all in admin view for editing)
-        // We'll show all items in the grid for admin purposes, but mark inactive ones
-        return categoryMatch;
+        if (isAdmin) return categoryMatch; // Admin sees all
+        return categoryMatch && p.status === 'Active'; // Public sees only Active
     });
 
     if (filtered.length === 0) {
@@ -265,7 +363,7 @@ function renderProducts(products, category) {
     }
 
     filtered.forEach(product => {
-        const card = createCard(product);
+        const card = createCard(product, isAdmin);
         grid.appendChild(card);
     });
 }
@@ -291,8 +389,6 @@ function parseCSV(text) {
             status: row[7] || 'Active',
             images: []
         };
-        // Parse images from the description field if they exist (we store as JSON in description for demo)
-        // In production, you'd have a separate column for images
         result.push(product);
     }
     return result;
@@ -311,7 +407,7 @@ function loadData() {
             renderProducts(allProducts, currentCategory);
         })
         .catch(() => {
-            // Fallback data if sheet fails
+            // Fallback data
             allProducts = [
                 { id: '1', name: 'Canon EOS R6', category: 'Camera Bodies', condition: 'Excellent', rating: 4.9, price: 285000, description: 'Full-frame mirrorless, 20MP', status: 'Active', images: [] },
                 { id: '2', name: 'Sony FE 24-70mm', category: 'Lenses', condition: 'Mint', rating: 4.7, price: 189000, description: 'Professional zoom lens', status: 'Active', images: [] },
@@ -321,16 +417,14 @@ function loadData() {
         });
 }
 
-// ─── SAVE TO GOOGLE SHEET (via copy-paste method) ────────────────
+// ─── SAVE TO GOOGLE SHEET ─────────────────────────────────────────
 
 function saveToSheet(products) {
-    // Create CSV string
     let csv = 'id,name,category,condition,rating,price,description,status\n';
     products.forEach(p => {
         csv += `${p.id},"${p.name}","${p.category}","${p.condition}",${p.rating},${p.price},"${p.description}","${p.status}"\n`;
     });
     
-    // Download as CSV file
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -345,11 +439,10 @@ function saveToSheet(products) {
         ✅ CSV downloaded! 
         <br>📋 <strong>Instructions:</strong> 
         <br>1. Open your Google Sheet
-        <br>2. Select all data (Ctrl+A)
-        <br>3. Delete it
-        <br>4. Go to File → Import → Upload → Select the downloaded CSV
-        <br>5. Choose "Replace current sheet"
-        <br>6. Your website will auto-refresh!
+        <br>2. Select all data (Ctrl+A) and delete it
+        <br>3. Go to File → Import → Upload → Select the downloaded CSV
+        <br>4. Choose "Replace current sheet"
+        <br>5. Your website will auto-refresh!
     `;
 }
 
@@ -357,6 +450,7 @@ function saveToSheet(products) {
 
 document.getElementById('productForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    if (!isAdmin) return;
     
     const id = document.getElementById('editId').value || generateId();
     const name = document.getElementById('itemName').value.trim();
@@ -372,7 +466,6 @@ document.getElementById('productForm').addEventListener('submit', async function
         return;
     }
     
-    // Compress images
     const imageData = [];
     for (const file of selectedFiles) {
         if (imageData.length >= 5) break;
@@ -384,7 +477,6 @@ document.getElementById('productForm').addEventListener('submit', async function
         }
     }
     
-    // Update or add product
     const existing = allProducts.findIndex(p => p.id === id);
     const product = { id, name, category, condition, rating, price, description, status, images: imageData };
     
@@ -396,7 +488,6 @@ document.getElementById('productForm').addEventListener('submit', async function
         document.getElementById('message').innerHTML = '✅ Item added successfully!';
     }
     
-    // Save to sheet
     saveToSheet(allProducts);
     renderProducts(allProducts, currentCategory);
     resetForm();
@@ -415,7 +506,6 @@ function resetForm() {
     document.getElementById('cancelEdit').style.display = 'none';
     document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save Item';
     selectedFiles = [];
-    editingId = null;
 }
 
 document.getElementById('cancelEdit').addEventListener('click', resetForm);
@@ -423,10 +513,10 @@ document.getElementById('cancelEdit').addEventListener('click', resetForm);
 // ─── EDIT / DELETE ─────────────────────────────────────────────────
 
 window.editItem = function(id) {
+    if (!isAdmin) return;
     const product = allProducts.find(p => p.id === id);
     if (!product) return;
     
-    editingId = id;
     document.getElementById('editId').value = id;
     document.getElementById('itemName').value = product.name;
     document.getElementById('itemCategory').value = product.category;
@@ -442,6 +532,7 @@ window.editItem = function(id) {
 };
 
 window.deleteItem = function(id) {
+    if (!isAdmin) return;
     if (!confirm('Delete this item?')) return;
     allProducts = allProducts.filter(p => p.id !== id);
     saveToSheet(allProducts);
@@ -488,6 +579,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 
 // ─── INIT ──────────────────────────────────────────────────────────
 
+checkAuth();
 loadData();
 </script>
 </body>
