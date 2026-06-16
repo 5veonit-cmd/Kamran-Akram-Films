@@ -6,18 +6,16 @@
     <title>Kamran Akram Films</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* ... (same CSS as before, keeping it concise for this example) ... */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
         body { background: #f8f6f2; color: #1e1e1e; padding: 1.5rem; }
         .container { max-width: 1300px; margin: 0 auto; }
-
-        /* Header */
         .brand { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; padding-bottom: 1.5rem; border-bottom: 2px solid #d4c9b8; margin-bottom: 2rem; }
         .brand h1 { font-size: 2.2rem; font-weight: 400; letter-spacing: 2px; color: #2c2b28; }
         .brand h1 i { color: #b78c5a; margin-right: 8px; }
         .brand .sub { font-size: 1rem; background: #eae5db; padding: 0.4rem 1.2rem; border-radius: 40px; color: #3d3a34; display: flex; align-items: center; gap: 10px; }
-        .admin-link { color: #b78c5a; text-decoration: none; font-size: 0.9rem; }
-
-        /* Login Overlay */
+        .admin-link { color: #b78c5a; text-decoration: none; font-size: 0.9rem; cursor: pointer; }
+        .admin-link:hover { text-decoration: underline; }
         .login-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
         .login-overlay.active { display: flex; }
         .login-box { background: white; padding: 2.5rem; border-radius: 24px; max-width: 400px; width: 90%; }
@@ -25,17 +23,15 @@
         .login-box input { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid #d4c9b8; border-radius: 8px; font-size: 1rem; }
         .login-box .btn { width: 100%; padding: 0.8rem; }
         .login-error { color: #e74c3c; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
-
-        /* Admin Panel */
         .admin-panel { background: white; padding: 2rem; border-radius: 24px; margin-bottom: 2rem; border: 1px solid #e3ddd2; display: none; }
         .admin-panel.visible { display: block; }
-        .admin-panel h2 { margin-bottom: 1rem; color: #2c2b28; }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
         .admin-header .btn-logout { background: #e74c3c; color: white; border: none; padding: 0.4rem 1.2rem; border-radius: 40px; cursor: pointer; font-size: 0.85rem; }
-
         .form-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
         .form-row input, .form-row select, .form-row textarea { padding: 0.6rem; border: 1px solid #d4c9b8; border-radius: 8px; font-size: 0.9rem; }
         .form-row textarea { resize: vertical; min-height: 60px; }
+        .form-row .mount-field { display: none; }
+        .form-row .mount-field.visible { display: block; }
         .photo-upload { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
         .photo-upload input[type="file"] { display: none; }
         .photo-preview { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
@@ -46,40 +42,45 @@
         .btn-danger:hover { background: #e74c3c; }
         .btn-success { background: #27ae60; }
         .btn-success:hover { background: #2ecc71; }
-
-        /* Filters */
-        .filter-bar { display: flex; flex-wrap: wrap; gap: 0.8rem 1.2rem; background: white; padding: 1rem 1.5rem; border-radius: 60px; margin-bottom: 2.5rem; align-items: center; border: 1px solid #e3ddd2; }
-        .filter-btn { background: transparent; border: none; padding: 0.3rem 1.2rem; border-radius: 40px; font-size: 0.95rem; cursor: pointer; background: #f0ede7; color: #3d3a34; }
+        .search-filter-bar { display: flex; flex-wrap: wrap; gap: 1rem; background: white; padding: 1rem 1.5rem; border-radius: 60px; margin-bottom: 2rem; align-items: center; border: 1px solid #e3ddd2; }
+        .search-box { flex: 1; min-width: 200px; display: flex; align-items: center; background: #f0ede7; border-radius: 40px; padding: 0 1rem; }
+        .search-box i { color: #8a7f6e; }
+        .search-box input { border: none; background: transparent; padding: 0.6rem 0.8rem; width: 100%; font-size: 0.95rem; outline: none; }
+        .filter-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+        .filter-btn { background: transparent; border: none; padding: 0.3rem 1rem; border-radius: 40px; font-size: 0.9rem; cursor: pointer; background: #f0ede7; color: #3d3a34; white-space: nowrap; }
         .filter-btn.active { background: #2c2b28; color: white; }
-
-        /* Product Grid */
+        .clear-search { background: transparent; border: none; color: #e74c3c; cursor: pointer; font-size: 0.9rem; padding: 0.3rem 0.8rem; display: none; }
+        .clear-search.visible { display: inline; }
+        .results-count { font-size: 0.85rem; color: #7d7566; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
-
         .card { background: white; border-radius: 24px; padding: 1.2rem; border: 1px solid #ede8df; position: relative; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 14px 28px rgba(0,0,0,0.04); }
         .card .main-image { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; background: #f0ede7; }
         .card .category-tag { font-size: 0.7rem; text-transform: uppercase; background: #eae3d7; padding: 0.2rem 0.8rem; border-radius: 40px; display: inline-block; margin-bottom: 0.8rem; }
         .card h3 { font-weight: 600; font-size: 1.3rem; margin-bottom: 0.3rem; }
         .card .condition { font-size: 0.9rem; color: #5b5549; margin-bottom: 0.2rem; }
+        .card .mount-info { font-size: 0.85rem; color: #7d7566; margin-bottom: 0.2rem; }
+        .card .mount-info i { color: #b78c5a; width: 18px; }
         .card .rating { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; margin: 0.5rem 0; }
         .card .rating i { color: #f5b342; }
         .card .price { font-size: 1.7rem; font-weight: 500; color: #1f4f3b; }
         .card .price small { font-size: 0.9rem; color: #6b6356; }
         .card .desc { font-size: 0.9rem; color: #5f594c; margin: 0.3rem 0; }
-        .card .meta { display: flex; justify-content: space-between; border-top: 1px dashed #ddd6cb; margin-top: 0.8rem; padding-top: 0.8rem; font-size: 0.8rem; color: #7d7566; }
+        .card .meta { display: flex; justify-content: space-between; border-top: 1px dashed #ddd6cb; margin-top: 0.8rem; padding-top: 0.8rem; font-size: 0.8rem; color: #7d7566; flex-wrap: wrap; gap: 0.3rem; }
         .card .admin-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
         .card .admin-actions button { padding: 0.3rem 0.8rem; border: none; border-radius: 20px; font-size: 0.75rem; cursor: pointer; }
-
         .status-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; background: #4CAF50; color: white; }
         .status-badge.inactive { background: #e74c3c; }
-
+        .admin-only-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.6rem; font-weight: 600; text-transform: uppercase; background: #f39c12; color: white; margin-left: 5px; }
         .empty-state { text-align: center; padding: 4rem 1rem; background: white; border-radius: 40px; border: 1px solid #e3ddd2; }
         .loader { text-align: center; padding: 4rem 0; color: #5f594c; }
         .loader i { font-size: 2.4rem; color: #b78c5a; }
-
         .footer { margin-top: 4rem; border-top: 1px solid #d4c9b8; padding-top: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; color: #4f4a3f; font-size: 0.9rem; }
-
-        @media (max-width: 600px) { .brand h1 { font-size: 1.8rem; } .form-row { grid-template-columns: 1fr; } }
+        .highlight { background: #fcf8e3; padding: 0 2px; border-radius: 2px; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #2c2b28; color: white; padding: 1rem 2rem; border-radius: 12px; z-index: 2000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 400px; }
+        .toast.success { border-left: 4px solid #27ae60; }
+        .toast.error { border-left: 4px solid #e74c3c; }
+        @media (max-width: 600px) { .brand h1 { font-size: 1.8rem; } .form-row { grid-template-columns: 1fr; } .search-filter-bar { border-radius: 30px; padding: 1rem; } .filter-buttons { gap: 0.3rem; } }
     </style>
 </head>
 <body>
@@ -87,10 +88,10 @@
     <!-- Header -->
     <div class="brand">
         <h1><i class="fas fa-camera-retro"></i> Kamran Akram Films</h1>
-        <div style="display:flex; align-items:center; gap:1rem;">
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
             <div class="sub"><i class="fas fa-map-pin"></i> Pakistan · PKR</div>
-            <a href="#" onclick="showLogin()" class="admin-link" id="loginLink"><i class="fas fa-lock"></i> Admin</a>
-            <a href="#" onclick="logout()" class="admin-link" id="logoutLink" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a onclick="showLogin()" class="admin-link" id="loginLink"><i class="fas fa-lock"></i> Admin</a>
+            <a onclick="logout()" class="admin-link" id="logoutLink" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
 
@@ -107,7 +108,7 @@
         </div>
     </div>
 
-    <!-- Admin Panel (hidden by default) -->
+    <!-- Admin Panel -->
     <div class="admin-panel" id="adminPanel">
         <div class="admin-header">
             <h2><i class="fas fa-plus-circle"></i> Add / Edit Equipment</h2>
@@ -124,6 +125,28 @@
                     <option value="Lighting">💡 Lighting</option>
                     <option value="Accessories">🎒 Accessories</option>
                 </select>
+                <div class="mount-field" id="mountField">
+                    <select id="itemMount">
+                        <option value="">Select Mount (for Camera Bodies)</option>
+                        <option value="Canon EF">Canon EF</option>
+                        <option value="Canon EF-S">Canon EF-S</option>
+                        <option value="Canon RF">Canon RF</option>
+                        <option value="Nikon F">Nikon F</option>
+                        <option value="Nikon Z">Nikon Z</option>
+                        <option value="Sony E">Sony E</option>
+                        <option value="Sony A">Sony A</option>
+                        <option value="Fujifilm X">Fujifilm X</option>
+                        <option value="Fujifilm GFX">Fujifilm GFX</option>
+                        <option value="Micro Four Thirds">Micro Four Thirds</option>
+                        <option value="Pentax K">Pentax K</option>
+                        <option value="Sigma SA">Sigma SA</option>
+                        <option value="Leica M">Leica M</option>
+                        <option value="Leica L">Leica L</option>
+                        <option value="Hasselblad XCD">Hasselblad XCD</option>
+                        <option value="Phase One XF">Phase One XF</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
                 <select id="itemCondition" required>
                     <option value="Mint">Mint</option>
                     <option value="Excellent">Excellent</option>
@@ -137,13 +160,12 @@
             <div class="form-row">
                 <textarea id="itemDescription" placeholder="Description" rows="2"></textarea>
                 <select id="itemStatus">
-                    <option value="Active">Active (Visible)</option>
-                    <option value="Draft">Draft (Hidden)</option>
-                    <option value="Sold">Sold (Hidden)</option>
+                    <option value="Active">Active (Visible to Public)</option>
+                    <option value="Draft">Draft (Admin Only)</option>
+                    <option value="Sold">Sold (Admin Only)</option>
                 </select>
             </div>
             
-            <!-- Photo Upload -->
             <div class="photo-upload">
                 <label class="btn" style="background:#b78c5a;">
                     <i class="fas fa-camera"></i> Upload Photos (max 5)
@@ -159,17 +181,24 @@
         <div id="message" style="margin-top:0.5rem; color:#1f4f3b;"></div>
     </div>
 
-    <!-- Category Filters -->
-    <div class="filter-bar">
-        <span><i class="fas fa-tag"></i> Category</span>
-        <button class="filter-btn active" data-category="all">All</button>
-        <button class="filter-btn" data-category="Camera Bodies">📷 Bodies</button>
-        <button class="filter-btn" data-category="Lenses">🔎 Lenses</button>
-        <button class="filter-btn" data-category="Lighting">💡 Lighting</button>
-        <button class="filter-btn" data-category="Accessories">🎒 Accessories</button>
+    <!-- Search & Filters -->
+    <div class="search-filter-bar">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search by name, category, mount, description...">
+            <button class="clear-search" id="clearSearch" onclick="clearSearch()">✕</button>
+        </div>
+        <div class="filter-buttons">
+            <span style="font-size:0.8rem; color:#7d7566; margin-right:0.3rem;">Category:</span>
+            <button class="filter-btn active" data-category="all">All</button>
+            <button class="filter-btn" data-category="Camera Bodies">📷 Bodies</button>
+            <button class="filter-btn" data-category="Lenses">🔎 Lenses</button>
+            <button class="filter-btn" data-category="Lighting">💡 Lighting</button>
+            <button class="filter-btn" data-category="Accessories">🎒 Accessories</button>
+        </div>
+        <span class="results-count" id="resultsCount"></span>
     </div>
 
-    <!-- Product Grid -->
     <div id="productGrid" class="grid">
         <div class="loader"><i class="fas fa-spinner fa-pulse"></i><br>Loading gear...</div>
     </div>
@@ -180,15 +209,23 @@
     </div>
 </div>
 
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════════
-//  CONFIGURATION 
+//  CONFIGURATION - UPDATE THESE TWO URLs
 // ═══════════════════════════════════════════════════════════════════
 
-// 🔑 CHANGE THIS PASSWORD TO SOMETHING SECURE!
-const ADMIN_PASSWORD = 'admin1323';  // ← CHANGE THIS!
+// 🔑 CHANGE THIS PASSWORD!
+const ADMIN_PASSWORD = 'admin123';
 
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS4v_gd5yTNfBTt9kAX8uCwZZ_c9I-jSuxJNNoOYDfn2a6kgGZlXVRJpTf8MeFVoHYUBxiIgpBF6cHR/pub?output=csv&gid=0';
+// 📊 Your Google Sheet CSV URL (for reading data)
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS4v_gd5yTNfBTt9kAX8uCwZZ_c9I-jSuxJNNoOYDfn2a6kgGZlXVRJpTf8MeFVoHYUBxiIgpBF6cHR/pub?output=csv';
+
+// 🔗 Your Apps Script Web App URL (for writing data)
+// REPLACE with your actual Apps Script URL from Step 3
+const API_URL = 'https://script.google.com/macros/s/YOUR_APPS_SCRIPT_ID/exec';
 
 // ═══════════════════════════════════════════════════════════════════
 //  APPLICATION CODE
@@ -197,8 +234,22 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS4v_gd5yTNfB
 const grid = document.getElementById('productGrid');
 let allProducts = [];
 let currentCategory = 'all';
+let currentSearch = '';
 let selectedFiles = [];
 let isAdmin = false;
+
+// ─── TOAST NOTIFICATION ──────────────────────────────────────────
+
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast ' + type;
+    toast.style.display = 'block';
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => {
+        toast.style.display = 'none';
+    }, 4000);
+}
 
 // ─── AUTHENTICATION ────────────────────────────────────────────────
 
@@ -207,6 +258,9 @@ function checkAuth() {
     if (saved === 'true') {
         isAdmin = true;
         showAdminPanel();
+    } else {
+        isAdmin = false;
+        hideAdminPanel();
     }
 }
 
@@ -231,6 +285,8 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
         showAdminPanel();
         document.getElementById('loginLink').style.display = 'none';
         document.getElementById('logoutLink').style.display = 'inline';
+        renderProducts(allProducts, currentCategory, currentSearch);
+        showToast('Logged in as Admin', 'success');
     } else {
         document.getElementById('loginError').style.display = 'block';
     }
@@ -239,17 +295,48 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 function logout() {
     isAdmin = false;
     sessionStorage.removeItem('adminAuth');
-    document.getElementById('adminPanel').classList.remove('visible');
+    hideAdminPanel();
     document.getElementById('loginLink').style.display = 'inline';
     document.getElementById('logoutLink').style.display = 'none';
-    renderProducts(allProducts, currentCategory);
+    renderProducts(allProducts, currentCategory, currentSearch);
+    showToast('Logged out', 'success');
 }
 
 function showAdminPanel() {
     document.getElementById('adminPanel').classList.add('visible');
     document.getElementById('loginLink').style.display = 'none';
     document.getElementById('logoutLink').style.display = 'inline';
-    renderProducts(allProducts, currentCategory);
+}
+
+function hideAdminPanel() {
+    document.getElementById('adminPanel').classList.remove('visible');
+}
+
+// ─── SHOW/HIDE MOUNT FIELD ────────────────────────────────────────
+
+document.getElementById('itemCategory').addEventListener('change', function() {
+    const mountField = document.getElementById('mountField');
+    if (this.value === 'Camera Bodies') {
+        mountField.classList.add('visible');
+    } else {
+        mountField.classList.remove('visible');
+        document.getElementById('itemMount').value = '';
+    }
+});
+
+// ─── SEARCH ────────────────────────────────────────────────────────
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    currentSearch = this.value.trim().toLowerCase();
+    document.getElementById('clearSearch').classList.toggle('visible', currentSearch.length > 0);
+    renderProducts(allProducts, currentCategory, currentSearch);
+});
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    currentSearch = '';
+    document.getElementById('clearSearch').classList.remove('visible');
+    renderProducts(allProducts, currentCategory, currentSearch);
 }
 
 // ─── HELPERS ────────────────────────────────────────────────────────
@@ -271,6 +358,12 @@ function renderStars(rating) {
 
 function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function highlightText(text, search) {
+    if (!search || !text) return text;
+    const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
 }
 
 function compressImage(file, maxSizeMB = 0.5) {
@@ -303,9 +396,30 @@ function compressImage(file, maxSizeMB = 0.5) {
     });
 }
 
+// ─── API CALLS TO APPS SCRIPT ─────────────────────────────────────
+
+async function callApi(action, data) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Required for Apps Script
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action, ...data })
+        });
+        // Note: With no-cors, we can't read the response directly
+        // We'll just assume success and reload data
+        return { success: true };
+    } catch (error) {
+        console.error('API Error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 // ─── RENDER PRODUCTS ──────────────────────────────────────────────
 
-function createCard(product, showAdmin = false) {
+function createCard(product, showAdmin = false, search = '') {
     const card = document.createElement('div');
     card.className = 'card';
     
@@ -315,7 +429,22 @@ function createCard(product, showAdmin = false) {
         `<img src="${mainImage}" class="main-image" alt="${product.name}">` :
         `<div class="main-image" style="display:flex;align-items:center;justify-content:center;color:#8a7f6e;"><i class="fas fa-camera" style="font-size:2rem;"></i></div>`;
 
-    const statusClass = product.status === 'Active' ? 'status-badge' : 'status-badge inactive';
+    const isActive = product.status === 'Active';
+    const statusClass = isActive ? 'status-badge' : 'status-badge inactive';
+    let statusBadge = `<span class="${statusClass}">${product.status || 'Draft'}</span>`;
+    
+    if (showAdmin && !isActive) {
+        statusBadge += ` <span class="admin-only-badge"><i class="fas fa-eye-slash"></i> Admin Only</span>`;
+    }
+    
+    const displayName = search ? highlightText(product.name, search) : product.name;
+    const displayDesc = search && product.description ? highlightText(product.description, search) : (product.description || '');
+    
+    let mountHTML = '';
+    if (product.category === 'Camera Bodies' && product.mount) {
+        const displayMount = search ? highlightText(product.mount, search) : product.mount;
+        mountHTML = `<div class="mount-info"><i class="fas fa-camera"></i> Mount: ${displayMount}</div>`;
+    }
     
     let adminActions = '';
     if (showAdmin) {
@@ -329,258 +458,10 @@ function createCard(product, showAdmin = false) {
     
     card.innerHTML = `
         ${imageHTML}
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px;">
             <span class="category-tag">${product.category || 'Misc'}</span>
-            <span class="${statusClass}">${product.status || 'Draft'}</span>
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                ${statusBadge}
+            </div>
         </div>
-        <h3>${product.name}</h3>
-        <div class="condition"><i class="fas fa-circle-check"></i> ${product.condition || 'N/A'}</div>
-        <div class="rating"><span>${renderStars(product.rating || 0)}</span> ${(product.rating || 0).toFixed(1)}</div>
-        <div class="price">${formatPrice(product.price)} <small>PKR</small></div>
-        <div class="desc">${product.description || ''}</div>
-        <div class="meta">
-            <span><i class="fas fa-box"></i> used</span>
-            <span><i class="fas fa-tag"></i> ${product.category || 'gear'}</span>
-        </div>
-        ${adminActions}
-    `;
-    return card;
-}
-
-function renderProducts(products, category) {
-    grid.innerHTML = '';
-    
-    // Filter: Only show Active items for public, show all for admin
-    const filtered = products.filter(p => {
-        const categoryMatch = category === 'all' || (p.category || '').toLowerCase() === category.toLowerCase();
-        if (isAdmin) return categoryMatch; // Admin sees all
-        return categoryMatch && p.status === 'Active'; // Public sees only Active
-    });
-
-    if (filtered.length === 0) {
-        grid.innerHTML = `<div class="empty-state"><i class="fas fa-box-open" style="font-size:2.4rem; color:#b78c5a;"></i><p style="margin-top:1rem;">No items found.</p></div>`;
-        return;
-    }
-
-    filtered.forEach(product => {
-        const card = createCard(product, isAdmin);
-        grid.appendChild(card);
-    });
-}
-
-// ─── PARSE CSV ─────────────────────────────────────────────────────
-
-function parseCSV(text) {
-    const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-    if (lines.length < 2) return [];
-    const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    const result = [];
-    for (let i = 1; i < lines.length; i++) {
-        const row = lines[i].split(',').map(field => field.trim().replace(/^"|"$/g, ''));
-        if (row.length < 2) continue;
-        const product = {
-            id: row[0] || generateId(),
-            name: row[1] || 'Unnamed',
-            category: row[2] || 'Other',
-            condition: row[3] || 'Good',
-            rating: parseFloat(row[4]) || 0,
-            price: parseFloat(row[5]) || 0,
-            description: row[6] || '',
-            status: row[7] || 'Active',
-            images: []
-        };
-        result.push(product);
-    }
-    return result;
-}
-
-// ─── LOAD DATA ─────────────────────────────────────────────────────
-
-function loadData() {
-    grid.innerHTML = `<div class="loader"><i class="fas fa-spinner fa-pulse"></i><br>Loading gear...</div>`;
-    fetch(SHEET_URL, { cache: 'no-store' })
-        .then(res => { if (!res.ok) throw new Error('Failed'); return res.text(); })
-        .then(csv => {
-            const products = parseCSV(csv);
-            if (products.length === 0) throw new Error('No data');
-            allProducts = products;
-            renderProducts(allProducts, currentCategory);
-        })
-        .catch(() => {
-            // Fallback data
-            allProducts = [
-                { id: '1', name: 'Canon EOS R6', category: 'Camera Bodies', condition: 'Excellent', rating: 4.9, price: 285000, description: 'Full-frame mirrorless, 20MP', status: 'Active', images: [] },
-                { id: '2', name: 'Sony FE 24-70mm', category: 'Lenses', condition: 'Mint', rating: 4.7, price: 189000, description: 'Professional zoom lens', status: 'Active', images: [] },
-                { id: '3', name: 'Godox AD200 Pro', category: 'Lighting', condition: 'Excellent', rating: 4.8, price: 78000, description: 'Portable flash', status: 'Active', images: [] },
-            ];
-            renderProducts(allProducts, currentCategory);
-        });
-}
-
-// ─── SAVE TO GOOGLE SHEET ─────────────────────────────────────────
-
-function saveToSheet(products) {
-    let csv = 'id,name,category,condition,rating,price,description,status\n';
-    products.forEach(p => {
-        csv += `${p.id},"${p.name}","${p.category}","${p.condition}",${p.rating},${p.price},"${p.description}","${p.status}"\n`;
-    });
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'equipment_data.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    document.getElementById('message').innerHTML = `
-        ✅ CSV downloaded! 
-        <br>📋 <strong>Instructions:</strong> 
-        <br>1. Open your Google Sheet
-        <br>2. Select all data (Ctrl+A) and delete it
-        <br>3. Go to File → Import → Upload → Select the downloaded CSV
-        <br>4. Choose "Replace current sheet"
-        <br>5. Your website will auto-refresh!
-    `;
-}
-
-// ─── FORM HANDLING ─────────────────────────────────────────────────
-
-document.getElementById('productForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    if (!isAdmin) return;
-    
-    const id = document.getElementById('editId').value || generateId();
-    const name = document.getElementById('itemName').value.trim();
-    const category = document.getElementById('itemCategory').value;
-    const condition = document.getElementById('itemCondition').value;
-    const rating = parseFloat(document.getElementById('itemRating').value) || 0;
-    const price = parseFloat(document.getElementById('itemPrice').value) || 0;
-    const description = document.getElementById('itemDescription').value.trim();
-    const status = document.getElementById('itemStatus').value;
-    
-    if (!name || !category || !price) {
-        document.getElementById('message').innerHTML = '❌ Please fill in all required fields.';
-        return;
-    }
-    
-    const imageData = [];
-    for (const file of selectedFiles) {
-        if (imageData.length >= 5) break;
-        try {
-            const compressed = await compressImage(file, 0.5);
-            imageData.push(compressed);
-        } catch (err) {
-            console.error('Error compressing image:', err);
-        }
-    }
-    
-    const existing = allProducts.findIndex(p => p.id === id);
-    const product = { id, name, category, condition, rating, price, description, status, images: imageData };
-    
-    if (existing >= 0) {
-        allProducts[existing] = product;
-        document.getElementById('message').innerHTML = '✅ Item updated successfully!';
-    } else {
-        allProducts.push(product);
-        document.getElementById('message').innerHTML = '✅ Item added successfully!';
-    }
-    
-    saveToSheet(allProducts);
-    renderProducts(allProducts, currentCategory);
-    resetForm();
-});
-
-function resetForm() {
-    document.getElementById('editId').value = '';
-    document.getElementById('itemName').value = '';
-    document.getElementById('itemCategory').value = '';
-    document.getElementById('itemCondition').value = 'Excellent';
-    document.getElementById('itemRating').value = '';
-    document.getElementById('itemPrice').value = '';
-    document.getElementById('itemDescription').value = '';
-    document.getElementById('itemStatus').value = 'Active';
-    document.getElementById('photoPreview').innerHTML = '';
-    document.getElementById('cancelEdit').style.display = 'none';
-    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save Item';
-    selectedFiles = [];
-}
-
-document.getElementById('cancelEdit').addEventListener('click', resetForm);
-
-// ─── EDIT / DELETE ─────────────────────────────────────────────────
-
-window.editItem = function(id) {
-    if (!isAdmin) return;
-    const product = allProducts.find(p => p.id === id);
-    if (!product) return;
-    
-    document.getElementById('editId').value = id;
-    document.getElementById('itemName').value = product.name;
-    document.getElementById('itemCategory').value = product.category;
-    document.getElementById('itemCondition').value = product.condition;
-    document.getElementById('itemRating').value = product.rating;
-    document.getElementById('itemPrice').value = product.price;
-    document.getElementById('itemDescription').value = product.description;
-    document.getElementById('itemStatus').value = product.status;
-    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Update Item';
-    document.getElementById('cancelEdit').style.display = 'inline-block';
-    document.getElementById('message').innerHTML = '✏️ Editing: ' + product.name;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-window.deleteItem = function(id) {
-    if (!isAdmin) return;
-    if (!confirm('Delete this item?')) return;
-    allProducts = allProducts.filter(p => p.id !== id);
-    saveToSheet(allProducts);
-    renderProducts(allProducts, currentCategory);
-    document.getElementById('message').innerHTML = '🗑️ Item deleted.';
-};
-
-// ─── PHOTO UPLOAD ──────────────────────────────────────────────────
-
-document.getElementById('photoInput').addEventListener('change', async function(e) {
-    const files = Array.from(e.target.files);
-    const preview = document.getElementById('photoPreview');
-    preview.innerHTML = '';
-    selectedFiles = [];
-    
-    for (const file of files) {
-        if (selectedFiles.length >= 5) break;
-        if (file.size > 500 * 1024) {
-            document.getElementById('message').innerHTML = `⚠️ ${file.name} is too large (max 500KB)`;
-            continue;
-        }
-        selectedFiles.push(file);
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            preview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-    }
-    document.getElementById('message').innerHTML = `📸 ${selectedFiles.length} photo(s) selected.`;
-});
-
-// ─── FILTERS ───────────────────────────────────────────────────────
-
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        currentCategory = this.dataset.category;
-        renderProducts(allProducts, currentCategory);
-    });
-});
-
-// ─── INIT ──────────────────────────────────────────────────────────
-
-checkAuth();
-loadData();
-</script>
-</body>
-</html>
+        <h3>${displayName}</h
