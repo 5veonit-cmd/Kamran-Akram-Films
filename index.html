@@ -578,7 +578,6 @@ document.getElementById('productForm').addEventListener('submit', async function
         return;
     }
     
-    // Get ALL form values - including status!
     const id = document.getElementById('editId').value || generateId();
     const name = document.getElementById('itemName').value.trim();
     const category = document.getElementById('itemCategory').value;
@@ -586,72 +585,66 @@ document.getElementById('productForm').addEventListener('submit', async function
     const rating = parseFloat(document.getElementById('itemRating').value) || 0;
     const price = parseFloat(document.getElementById('itemPrice').value) || 0;
     const description = document.getElementById('itemDescription').value.trim();
-    const status = document.getElementById('itemStatus').value;  // ← CRITICAL: Get status value
+    const status = document.getElementById('itemStatus').value;
     const mount = document.getElementById('itemMount').value;
-    
-    // Debug: Log what we're sending
-    console.log('Saving item with status:', status);
     
     if (!name || !category || !price) {
         showToast('Please fill in all required fields.', 'error');
         return;
     }
     
-    // Compress images
-    const imageData = [];
-    for (const file of selectedFiles) {
-        if (imageData.length >= 5) break;
-        try {
-            const compressed = await compressImage(file, 0.5);
-            imageData.push(compressed);
-        } catch (err) {
-            console.error('Error compressing image:', err);
-        }
-    }
-    
-    const isExisting = allProducts.some(p => p.id === id);
-    const action = isExisting ? 'update' : 'add';
-    
-    // Build the item object with ALL fields
-    const item = { 
-        id, 
-        name, 
-        category, 
-        condition, 
-        rating, 
-        price, 
-        description, 
-        status,  // ← CRITICAL: Include status
-        mount, 
-        images: imageData 
-    };
-    
-    // Debug: Log the full item
-    console.log('Sending item:', item);
-    
-    // Show saving state
+    // Show uploading state
     document.getElementById('submitBtn').disabled = true;
-    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Saving...';
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Uploading & Saving...';
     
     try {
+        // Compress and convert images to base64
+        const imageData = [];
+        for (const file of selectedFiles) {
+            if (imageData.length >= 5) break;
+            try {
+                const compressed = await compressImage(file, 0.5);
+                imageData.push(compressed);
+            } catch (err) {
+                console.error('Error compressing image:', err);
+            }
+        }
+        
+        const isExisting = allProducts.some(p => p.id === id);
+        const action = isExisting ? 'update' : 'add';
+        
+        const item = { 
+            id, 
+            name, 
+            category, 
+            condition, 
+            rating, 
+            price, 
+            description, 
+            status, 
+            mount, 
+            images: imageData  // Send base64 data to Apps Script
+        };
+        
         const result = await callApi(action, { item });
         
         if (result.success) {
-            showToast(isExisting ? '✅ Item updated successfully!' : '✅ Item added successfully!', 'success');
-            // Reload data from sheet
-            setTimeout(loadData, 1500);
+            showToast(isExisting ? '✅ Item updated with photos!' : '✅ Item added with photos!', 'success');
+            // Clear the form
             resetForm();
+            // Reload data after a delay
+            setTimeout(loadData, 2000);
         } else {
             showToast('❌ Error: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch (error) {
         showToast('❌ Failed to save: ' + error.message, 'error');
+        console.error('Save error:', error);
     } finally {
         document.getElementById('submitBtn').disabled = false;
         document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save Item';
     }
 });
-
 function resetForm() {
     document.getElementById('editId').value = '';
     document.getElementById('itemName').value = '';
