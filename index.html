@@ -6,7 +6,6 @@
     <title>Kamran Akram Films</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ... (same CSS as before, keeping it concise for this example) ... */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
         body { background: #f8f6f2; color: #1e1e1e; padding: 1.5rem; }
         .container { max-width: 1300px; margin: 0 auto; }
@@ -402,14 +401,12 @@ async function callApi(action, data) {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
-            mode: 'no-cors', // Required for Apps Script
+            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ action, ...data })
         });
-        // Note: With no-cors, we can't read the response directly
-        // We'll just assume success and reload data
         return { success: true };
     } catch (error) {
         console.error('API Error:', error);
@@ -577,174 +574,4 @@ function loadData() {
 document.getElementById('productForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     if (!isAdmin) {
-        showToast('Please login as admin first', 'error');
-        return;
-    }
-    
-    const id = document.getElementById('editId').value || generateId();
-    const name = document.getElementById('itemName').value.trim();
-    const category = document.getElementById('itemCategory').value;
-    const condition = document.getElementById('itemCondition').value;
-    const rating = parseFloat(document.getElementById('itemRating').value) || 0;
-    const price = parseFloat(document.getElementById('itemPrice').value) || 0;
-    const description = document.getElementById('itemDescription').value.trim();
-    const status = document.getElementById('itemStatus').value;
-    const mount = document.getElementById('itemMount').value;
-    
-    if (!name || !category || !price) {
-        showToast('Please fill in all required fields.', 'error');
-        return;
-    }
-    
-    // Compress images
-    const imageData = [];
-    for (const file of selectedFiles) {
-        if (imageData.length >= 5) break;
-        try {
-            const compressed = await compressImage(file, 0.5);
-            imageData.push(compressed);
-        } catch (err) {
-            console.error('Error compressing image:', err);
-        }
-    }
-    
-    const isExisting = allProducts.some(p => p.id === id);
-    const action = isExisting ? 'update' : 'add';
-    const item = { id, name, category, condition, rating, price, description, status, mount, images: imageData };
-    
-    // Show saving state
-    document.getElementById('submitBtn').disabled = true;
-    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Saving...';
-    
-    try {
-        // Send to Apps Script
-        const result = await callApi(action, { item });
-        
-        if (result.success) {
-            showToast(isExisting ? '✅ Item updated successfully!' : '✅ Item added successfully!', 'success');
-            // Reload data from sheet
-            setTimeout(loadData, 1000);
-            resetForm();
-        } else {
-            showToast('❌ Error: ' + (result.error || 'Unknown error'), 'error');
-        }
-    } catch (error) {
-        showToast('❌ Failed to save: ' + error.message, 'error');
-    } finally {
-        document.getElementById('submitBtn').disabled = false;
-        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save Item';
-    }
-});
-
-function resetForm() {
-    document.getElementById('editId').value = '';
-    document.getElementById('itemName').value = '';
-    document.getElementById('itemCategory').value = '';
-    document.getElementById('itemCondition').value = 'Excellent';
-    document.getElementById('itemRating').value = '';
-    document.getElementById('itemPrice').value = '';
-    document.getElementById('itemDescription').value = '';
-    document.getElementById('itemStatus').value = 'Active';
-    document.getElementById('itemMount').value = '';
-    document.getElementById('mountField').classList.remove('visible');
-    document.getElementById('photoPreview').innerHTML = '';
-    document.getElementById('cancelEdit').style.display = 'none';
-    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save Item';
-    selectedFiles = [];
-}
-
-document.getElementById('cancelEdit').addEventListener('click', resetForm);
-
-// ─── EDIT / DELETE ─────────────────────────────────────────────────
-
-window.editItem = function(id) {
-    if (!isAdmin) return;
-    const product = allProducts.find(p => p.id === id);
-    if (!product) return;
-    
-    document.getElementById('editId').value = id;
-    document.getElementById('itemName').value = product.name;
-    document.getElementById('itemCategory').value = product.category;
-    document.getElementById('itemCondition').value = product.condition;
-    document.getElementById('itemRating').value = product.rating;
-    document.getElementById('itemPrice').value = product.price;
-    document.getElementById('itemDescription').value = product.description;
-    document.getElementById('itemStatus').value = product.status;
-    document.getElementById('itemMount').value = product.mount || '';
-    
-    if (product.category === 'Camera Bodies') {
-        document.getElementById('mountField').classList.add('visible');
-    }
-    
-    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Update Item';
-    document.getElementById('cancelEdit').style.display = 'inline-block';
-    showToast('✏️ Editing: ' + product.name, 'success');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-window.deleteItem = async function(id) {
-    if (!isAdmin) return;
-    if (!confirm('Delete this item?')) return;
-    
-    try {
-        const result = await callApi('delete', { id });
-        if (result.success) {
-            showToast('🗑️ Item deleted successfully!', 'success');
-            setTimeout(loadData, 1000);
-        } else {
-            showToast('❌ Error deleting: ' + (result.error || 'Unknown error'), 'error');
-        }
-    } catch (error) {
-        showToast('❌ Failed to delete: ' + error.message, 'error');
-    }
-};
-
-// ─── PHOTO UPLOAD ──────────────────────────────────────────────────
-
-document.getElementById('photoInput').addEventListener('change', function(e) {
-    const files = Array.from(e.target.files);
-    const preview = document.getElementById('photoPreview');
-    preview.innerHTML = '';
-    selectedFiles = [];
-    
-    for (const file of files) {
-        if (selectedFiles.length >= 5) break;
-        if (file.size > 500 * 1024) {
-            showToast(`⚠️ ${file.name} is too large (max 500KB)`, 'error');
-            continue;
-        }
-        selectedFiles.push(file);
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            preview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-    }
-    showToast(`📸 ${selectedFiles.length} photo(s) selected.`, 'success');
-});
-
-// ─── FILTERS ───────────────────────────────────────────────────────
-
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        currentCategory = this.dataset.category;
-        renderProducts(allProducts, currentCategory, currentSearch);
-    });
-});
-
-// ─── INIT ──────────────────────────────────────────────────────────
-
-checkAuth();
-loadData();
-
-console.log('🔐 Kamran Akram Films Loaded');
-console.log('📊 Data from: ' + SHEET_URL);
-console.log('🔗 API: ' + API_URL);
-console.log('💡 Changes write directly to Google Sheet!');
-</script>
-</body>
-</html>
+       
