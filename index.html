@@ -464,4 +464,287 @@ function createCard(product, showAdmin = false, search = '') {
                 ${statusBadge}
             </div>
         </div>
-        <h3>${displayName}</h
+        <h3>${displayName}</h3>
+        <div class="condition"><i class="fas fa-circle-check"></i> ${product.condition || 'N/A'}</div>
+        ${mountHTML}
+        <div class="rating"><span>${renderStars(product.rating || 0)}</span> ${(product.rating || 0).toFixed(1)}</div>
+        <div class="price">${formatPrice(product.price)} <small>PKR</small></div>
+        <div class="desc">${displayDesc}</div>
+        <div class="meta">
+            <span><i class="fas fa-box"></i> used</span>
+            <span><i class="fas fa-tag"></i> ${product.category || 'gear'}</span>
+            ${product.mount ? `<span><i class="fas fa-camera"></i> ${product.mount}</span>` : ''}
+        </div>
+        ${adminActions}
+    `;
+    return card;
+}
+
+function renderProducts(products, category, search = '') {
+    grid.innerHTML = '';
+    
+    let filtered = products.filter(p => {
+        const categoryMatch = category === 'all' || (p.category || '').toLowerCase() === category.toLowerCase();
+        if (isAdmin) {
+            return categoryMatch;
+        } else {
+            return categoryMatch && p.status === 'Active';
+        }
+    });
+    
+    if (search) {
+        const searchLower = search.toLowerCase();
+        filtered = filtered.filter(p => {
+            const searchable = [
+                p.name || '',
+                p.category || '',
+                p.condition || '',
+                p.description || '',
+                p.mount || '',
+                p.status || ''
+            ].join(' ').toLowerCase();
+            return searchable.includes(searchLower);
+        });
+    }
+    
+    const countEl = document.getElementById('resultsCount');
+    countEl.textContent = filtered.length > 0 ? `${filtered.length} item(s) found` : 'No items found';
+
+    if (filtered.length === 0) {
+        const message = isAdmin ? 'No items match your search.' : 'No active items available.';
+        grid.innerHTML = `<div class="empty-state"><i class="fas fa-box-open" style="font-size:2.4rem; color:#b78c5a;"></i><p style="margin-top:1rem;">${message}</p></div>`;
+        return;
+    }
+
+    filtered.forEach(product => {
+        const card = createCard(product, isAdmin, search);
+        grid.appendChild(card);
+    });
+}
+
+// ─── PARSE CSV ─────────────────────────────────────────────────────
+
+function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+    if (lines.length < 2) return [];
+    const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const result = [];
+    for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(',').map(field => field.trim().replace(/^"|"$/g, ''));
+        if (row.length < 2) continue;
+        const product = {
+            id: row[0] || generateId(),
+            name: row[1] || 'Unnamed',
+            category: row[2] || 'Other',
+            condition: row[3] || 'Good',
+            rating: parseFloat(row[4]) || 0,
+            price: parseFloat(row[5]) || 0,
+            description: row[6] || '',
+            status: row[7] || 'Active',
+            mount: row[8] || '',
+            images: []
+        };
+        result.push(product);
+    }
+    return result;
+}
+
+// ─── LOAD DATA ─────────────────────────────────────────────────────
+
+function loadData() {
+    grid.innerHTML = `<div class="loader"><i class="fas fa-spinner fa-pulse"></i><br>Loading gear...</div>`;
+    fetch(SHEET_URL, { cache: 'no-store' })
+        .then(res => { if (!res.ok) throw new Error('Failed'); return res.text(); })
+        .then(csv => {
+            const products = parseCSV(csv);
+            if (products.length === 0) throw new Error('No data');
+            allProducts = products;
+            renderProducts(allProducts, currentCategory, currentSearch);
+        })
+        .catch(() => {
+            // Fallback data
+            allProducts = [
+                { id: '1', name: 'Canon EOS R6', category: 'Camera Bodies', condition: 'Excellent', rating: 4.9, price: 285000, description: 'Full-frame mirrorless with IBIS', status: 'Active', mount: 'Canon RF', images: [] },
+                { id: '2', name: 'Sony FE 24-70mm f/2.8 GM', category: 'Lenses', condition: 'Mint', rating: 4.7, price: 189000, description: 'Professional zoom lens', status: 'Active', mount: 'Sony E', images: [] },
+                { id: '3', name: 'Godox AD200 Pro', category: 'Lighting', condition: 'Excellent', rating: 4.8, price: 78000, description: 'Portable flash', status: 'Active', mount: '', images: [] },
+            ];
+            renderProducts(allProducts, currentCategory, currentSearch);
+        });
+}
+
+// ─── FORM HANDLING ─────────────────────────────────────────────────
+
+document.getElementById('productForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!isAdmin) {
+        showToast('Please login as admin first', 'error');
+        return;
+    }
+    
+    const id = document.getElementById('editId').value || generateId();
+    const name = document.getElementById('itemName').value.trim();
+    const category = document.getElementById('itemCategory').value;
+    const condition = document.getElementById('itemCondition').value;
+    const rating = parseFloat(document.getElementById('itemRating').value) || 0;
+    const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+    const description = document.getElementById('itemDescription').value.trim();
+    const status = document.getElementById('itemStatus').value;
+    const mount = document.getElementById('itemMount').value;
+    
+    if (!name || !category || !price) {
+        showToast('Please fill in all required fields.', 'error');
+        return;
+    }
+    
+    // Compress images
+    const imageData = [];
+    for (const file of selectedFiles) {
+        if (imageData.length >= 5) break;
+        try {
+            const compressed = await compressImage(file, 0.5);
+            imageData.push(compressed);
+        } catch (err) {
+            console.error('Error compressing image:', err);
+        }
+    }
+    
+    const isExisting = allProducts.some(p => p.id === id);
+    const action = isExisting ? 'update' : 'add';
+    const item = { id, name, category, condition, rating, price, description, status, mount, images: imageData };
+    
+    // Show saving state
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Saving...';
+    
+    try {
+        // Send to Apps Script
+        const result = await callApi(action, { item });
+        
+        if (result.success) {
+            showToast(isExisting ? '✅ Item updated successfully!' : '✅ Item added successfully!', 'success');
+            // Reload data from sheet
+            setTimeout(loadData, 1000);
+            resetForm();
+        } else {
+            showToast('❌ Error: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showToast('❌ Failed to save: ' + error.message, 'error');
+    } finally {
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save Item';
+    }
+});
+
+function resetForm() {
+    document.getElementById('editId').value = '';
+    document.getElementById('itemName').value = '';
+    document.getElementById('itemCategory').value = '';
+    document.getElementById('itemCondition').value = 'Excellent';
+    document.getElementById('itemRating').value = '';
+    document.getElementById('itemPrice').value = '';
+    document.getElementById('itemDescription').value = '';
+    document.getElementById('itemStatus').value = 'Active';
+    document.getElementById('itemMount').value = '';
+    document.getElementById('mountField').classList.remove('visible');
+    document.getElementById('photoPreview').innerHTML = '';
+    document.getElementById('cancelEdit').style.display = 'none';
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save Item';
+    selectedFiles = [];
+}
+
+document.getElementById('cancelEdit').addEventListener('click', resetForm);
+
+// ─── EDIT / DELETE ─────────────────────────────────────────────────
+
+window.editItem = function(id) {
+    if (!isAdmin) return;
+    const product = allProducts.find(p => p.id === id);
+    if (!product) return;
+    
+    document.getElementById('editId').value = id;
+    document.getElementById('itemName').value = product.name;
+    document.getElementById('itemCategory').value = product.category;
+    document.getElementById('itemCondition').value = product.condition;
+    document.getElementById('itemRating').value = product.rating;
+    document.getElementById('itemPrice').value = product.price;
+    document.getElementById('itemDescription').value = product.description;
+    document.getElementById('itemStatus').value = product.status;
+    document.getElementById('itemMount').value = product.mount || '';
+    
+    if (product.category === 'Camera Bodies') {
+        document.getElementById('mountField').classList.add('visible');
+    }
+    
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Update Item';
+    document.getElementById('cancelEdit').style.display = 'inline-block';
+    showToast('✏️ Editing: ' + product.name, 'success');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.deleteItem = async function(id) {
+    if (!isAdmin) return;
+    if (!confirm('Delete this item?')) return;
+    
+    try {
+        const result = await callApi('delete', { id });
+        if (result.success) {
+            showToast('🗑️ Item deleted successfully!', 'success');
+            setTimeout(loadData, 1000);
+        } else {
+            showToast('❌ Error deleting: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showToast('❌ Failed to delete: ' + error.message, 'error');
+    }
+};
+
+// ─── PHOTO UPLOAD ──────────────────────────────────────────────────
+
+document.getElementById('photoInput').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    const preview = document.getElementById('photoPreview');
+    preview.innerHTML = '';
+    selectedFiles = [];
+    
+    for (const file of files) {
+        if (selectedFiles.length >= 5) break;
+        if (file.size > 500 * 1024) {
+            showToast(`⚠️ ${file.name} is too large (max 500KB)`, 'error');
+            continue;
+        }
+        selectedFiles.push(file);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    }
+    showToast(`📸 ${selectedFiles.length} photo(s) selected.`, 'success');
+});
+
+// ─── FILTERS ───────────────────────────────────────────────────────
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentCategory = this.dataset.category;
+        renderProducts(allProducts, currentCategory, currentSearch);
+    });
+});
+
+// ─── INIT ──────────────────────────────────────────────────────────
+
+checkAuth();
+loadData();
+
+console.log('🔐 Kamran Akram Films Loaded');
+console.log('📊 Data from: ' + SHEET_URL);
+console.log('🔗 API: ' + API_URL);
+console.log('💡 Changes write directly to Google Sheet!');
+</script>
+</body>
+</html>
